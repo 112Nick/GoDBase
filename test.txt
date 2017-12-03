@@ -1,0 +1,59 @@
+
+package main
+
+import (
+"github.com/valyala/fasthttp"
+"github.com/qiangxue/fasthttp-routing"
+"github.com/fasthttp-contrib/render"
+"fmt"
+"encoding/json"
+"github.com/jackc/pgx"
+"io/ioutil"
+)
+
+type Person struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+func main() {
+	router := routing.New()
+	r := render.New()
+
+	//var port = flag.Int("p", 5432, "help message for flagname")
+	//var db = flag.String("db", "forum_db", "blabla")
+
+	config := pgx.ConnConfig{
+		Host:     "localhost",
+		Port:     5432,
+		Database: "postgres",
+		User:     "postgres",
+		Password: "123",
+	}
+
+	conn, _ := pgx.NewConnPool(
+		pgx.ConnPoolConfig{
+			ConnConfig:     config,
+			MaxConnections: 50,
+		})
+
+
+
+	router.Get("/", func(c *routing.Context) error {
+		fmt.Fprintf(c, "Hello, world!")
+		return nil
+	})
+
+	router.Post("/post", func(c *routing.Context) error {
+		var p Person
+		err := json.Unmarshal(c.PostBody(), &p)
+
+		println(p.Name)
+		println(p.Age)
+
+		r.JSON(c.RequestCtx, fasthttp.StatusOK, p)
+		return err
+	})
+
+	fasthttp.ListenAndServe(":8000", router.HandleRequest)
+}
